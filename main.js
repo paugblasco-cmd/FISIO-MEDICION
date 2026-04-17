@@ -90,6 +90,95 @@ const DB = {
   }
 };
 
+// ==========================================
+// NUEVO: SISTEMA QUICK-DASH FORMULARIO
+// ==========================================
+const qdData = [
+  { q: "1. Abrir un frasco apretado o nuevo", opts: ["Nada de dificultad", "Algo de dificultad", "Dificultad moderada", "Dificultad severa", "No puedo"] },
+  { q: "2. Hacer trabajos caseros (limpiar paredes y pisos)", opts: ["Nada de dificultad", "Algo de dificultad", "Dificultad moderada", "Dificultad severa", "No puedo"] },
+  { q: "3. Cargar una bolsa con alimentos o cargar un maletín", opts: ["Nada de dificultad", "Algo de dificultad", "Dificultad moderada", "Dificultad severa", "No puedo"] },
+  { q: "4. Lavarse la espalda", opts: ["Nada de dificultad", "Algo de dificultad", "Dificultad moderada", "Dificultad severa", "No puedo"] },
+  { q: "5. Usar un cuchillo para partir comida", opts: ["Nada de dificultad", "Algo de dificultad", "Dificultad moderada", "Dificultad severa", "No puedo"] },
+  { q: "6. Actividades recreacionales (usar fuerza o impacto en brazo/hombro/mano)", opts: ["Nada de dificultad", "Algo de dificultad", "Dificultad moderada", "Dificultad severa", "No puedo"] },
+  { q: "7. Durante la semana pasada, ¿el problema/dolor afectó sus actividades sociales?", opts: ["Nada", "Algo", "Moderado", "Bastante", "Extremadamente"] },
+  { q: "8. Durante la semana pasada, ¿estuvo limitado en su trabajo o actividades diarias debido al problema?", opts: ["Sin limitación", "Un poco limitado", "Limitación moderada", "Muy limitado", "No puedo"] },
+  { q: "9. Nivel de dolor en el brazo, hombro o mano", opts: ["Nada", "Algo", "Moderado", "Severo", "Extremo"] },
+  { q: "10. Nivel de hormigueo (y/o piquetes) en su brazo, hombro o manos", opts: ["Nada", "Algo", "Moderado", "Severo", "Extremo"] },
+  { q: "11. Durante la semana pasada, ¿cuánta dificultad tuvo durmiendo debido al problema?", opts: ["No es difícil", "Poco difícil", "Dificultad moderada", "Dificultad severa", "Tanta que no puedo dormir"] }
+];
+
+let qdAnswers = new Array(11).fill(null);
+let qdStep = 0;
+
+function renderQD() {
+   document.getElementById("qd-wizard").classList.remove("hidden");
+   document.getElementById("qd-result").classList.add("hidden");
+   document.getElementById("qd-question-text").textContent = qdData[qdStep].q;
+   
+   const optsContainer = document.getElementById("qd-options-container");
+   optsContainer.innerHTML = "";
+   
+   qdData[qdStep].opts.forEach((text, index) => {
+       const div = document.createElement("div");
+       div.className = "qd-option" + (qdAnswers[qdStep] === index + 1 ? " selected" : "");
+       div.innerHTML = `<span class="qd-option-num">${index + 1}</span> <span>${text}</span>`;
+       div.onclick = () => {
+           qdAnswers[qdStep] = index + 1;
+           renderQD();
+           playSfx(sfxGood);
+           // Auto-avance fluido con pequeño retardo
+           setTimeout(() => { if (qdStep < 10) { qdStep++; renderQD(); } }, 350);
+       };
+       optsContainer.appendChild(div);
+   });
+
+   document.getElementById("qd-progress").textContent = `Pregunta ${qdStep + 1} de 11`;
+   document.getElementById("qd-prev-btn").style.visibility = qdStep === 0 ? "hidden" : "visible";
+   document.getElementById("qd-next-btn").textContent = qdStep === 10 ? "Calcular ➡" : "Siguiente ➡";
+}
+
+document.getElementById("qd-prev-btn").addEventListener("click", () => {
+    if(qdStep > 0) { qdStep--; renderQD(); }
+});
+
+document.getElementById("qd-next-btn").addEventListener("click", () => {
+    if(qdAnswers[qdStep] === null) {
+        alert("Por favor, selecciona una opción antes de continuar.");
+        return;
+    }
+    if(qdStep < 10) {
+        qdStep++; renderQD();
+    } else {
+        // CÁLCULO DE LA FÓRMULA QUICK-DASH
+        const sum = qdAnswers.reduce((a, b) => a + b, 0);
+        const score = ((sum / 11) - 1) * 25;
+        
+        document.getElementById("qd-wizard").classList.add("hidden");
+        document.getElementById("qd-result").classList.remove("hidden");
+        
+        const scoreSpan = document.getElementById("qd-score-value");
+        scoreSpan.textContent = score.toFixed(1) + "%";
+        
+        // Colorear el resultado según gravedad visualmente
+        if(score < 20) scoreSpan.style.color = "#10b981"; // Verde
+        else if (score < 50) scoreSpan.style.color = "#fbbf24"; // Amarillo
+        else scoreSpan.style.color = "#ef4444"; // Rojo
+        
+        playSfx(sfxLevel);
+    }
+});
+
+document.getElementById("qd-restart-btn").addEventListener("click", () => {
+    qdAnswers.fill(null);
+    qdStep = 0;
+    renderQD();
+});
+
+
+// ==========================================
+// LOGICA DE INTERFAZ Y NAVEGACIÓN
+// ==========================================
+
 function playSfx(audio) { if (audio) { audio.currentTime = 0; audio.play().catch(()=>{}); } }
 
 function updateDashboardNav() {
@@ -175,7 +264,6 @@ function drawGoniometer(pt1, pt2, pt3, angle, holdProgress, colorTheme) {
   ctx.shadowBlur = 0;
 }
 
-// NUEVAS FUNCIONES PARA EL TOAST
 function showToast(title, subtitle) {
     const toast = document.getElementById("toast-notification");
     document.getElementById("toast-title").textContent = title;
@@ -212,13 +300,12 @@ function registerRepCompleted(isLeft) {
             tempSessionData.fL = Math.round(maxAngleAchievedL);
             tempSessionData.fR = Math.round(maxAngleAchievedR);
             
-            // LLAMADA AL TOAST DE AVISO (4 SEGUNDOS PARA CAMBIAR POSTURA)
             showToast("✅ Vista Frontal Completada", "Por favor, ponte DE PERFIL para continuar.");
             
             setTimeout(() => {
                 hideToast();
                 document.getElementById("btn-lateral").click();
-            }, 4000); // 4 Segundos de cortesía para darse la vuelta sin tocar botones
+            }, 4000);
         } else {
             tempSessionData.lL = Math.round(maxAngleAchievedL);
             tempSessionData.lR = Math.round(maxAngleAchievedR);
@@ -274,7 +361,6 @@ function processArm(hip, shoulder, elbow, isLeft) {
                 playSfx(sfxLevel); 
                 isHolding = false;
                 holdStartTime = performance.now() + 2000;
-                
                 registerRepCompleted(isLeft);
             }
         }
@@ -282,16 +368,13 @@ function processArm(hip, shoulder, elbow, isLeft) {
         isHolding = false; holdStartTime = 0; 
     }
 
+    // Actualizamos las variables matemáticas de forma segura
     if (isLeft) {
         smoothedAngleL = currentSmoothed; maxAngleAchievedL = currentMax;
         isHoldingL = isHolding; holdStartTimeL = holdStartTime;
-        document.getElementById("current-angle-l").textContent = `${displayAngle}°`;
-        document.getElementById("max-angle-l").textContent = `${Math.round(currentMax)}°`;
     } else {
         smoothedAngleR = currentSmoothed; maxAngleAchievedR = currentMax;
         isHoldingR = isHolding; holdStartTimeR = holdStartTime;
-        document.getElementById("current-angle-r").textContent = `${displayAngle}°`;
-        document.getElementById("max-angle-r").textContent = `${Math.round(currentMax)}°`;
     }
 
     return { displayAngle, progress: holdProgress };
@@ -309,10 +392,7 @@ function processClinicalData(pose) {
       const rightData = processArm(hipR, shoulderR, elbowR, false);
 
       if(leftData.displayAngle !== null) drawGoniometer(hipL, shoulderL, elbowL, leftData.displayAngle, leftData.progress, "#f43f5e"); 
-      else document.getElementById("current-angle-l").textContent = "--";
-
       if(rightData.displayAngle !== null) drawGoniometer(hipR, shoulderR, elbowR, rightData.displayAngle, rightData.progress, "#38bdf8"); 
-      else document.getElementById("current-angle-r").textContent = "--";
 
   } else if (currentMode === 'lateral') {
       const leftConf = (hipL?.score || 0) + (shoulderL?.score || 0) + (elbowL?.score || 0);
@@ -323,11 +403,9 @@ function processClinicalData(pose) {
       if (isLeftVisible) {
           const leftData = processArm(hipL, shoulderL, elbowL, true);
           if(leftData.displayAngle !== null) drawGoniometer(hipL, shoulderL, elbowL, leftData.displayAngle, leftData.progress, "#f43f5e");
-          document.getElementById("current-angle-r").textContent = "-- (Oculto)";
       } else {
           const rightData = processArm(hipR, shoulderR, elbowR, false);
           if(rightData.displayAngle !== null) drawGoniometer(hipR, shoulderR, elbowR, rightData.displayAngle, rightData.progress, "#38bdf8");
-          document.getElementById("current-angle-l").textContent = "-- (Oculto)";
       }
   }
 }
@@ -383,7 +461,11 @@ document.getElementById("menu-history-btn").addEventListener("click", () => {
     showScreen('dashboard');
 });
 
+// NUEVO INICIO FORMULARIO: Resetea el cuestionario al entrar
 document.getElementById("menu-form-btn").addEventListener("click", () => {
+    qdAnswers.fill(null);
+    qdStep = 0;
+    renderQD();
     showScreen('form');
 });
 
@@ -471,11 +553,6 @@ function resetAngles() {
     lastRepTimeL = performance.now(); 
     lastRepTimeR = performance.now(); 
 
-    document.getElementById("current-angle-l").textContent = "0°";
-    document.getElementById("max-angle-l").textContent = "0°";
-    document.getElementById("current-angle-r").textContent = "0°";
-    document.getElementById("max-angle-r").textContent = "0°";
-    
     const repCounter = document.getElementById("rep-counter");
     if(repCounter) repCounter.textContent = "Repeticiones - Izq: 0/2 | Der: 0/2";
 
