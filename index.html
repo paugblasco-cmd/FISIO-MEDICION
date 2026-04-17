@@ -51,24 +51,37 @@
         <div class="action-buttons mt-4 menu-grid">
           <button id="menu-gonio-btn" class="btn primary full-width">📏 Goniómetro (Medir)</button>
           <button id="menu-history-btn" class="btn secondary full-width">🗂️ Ver Historial General</button>
-          <button id="menu-form-btn" class="btn secondary full-width">📝 Formulario Clínico</button>
+          <button id="menu-form-btn" class="btn secondary full-width">📝 Formulario Clínico (Quick-DASH)</button>
         </div>
         <button id="menu-exit-btn" class="btn secondary small mt-4" style="border: none; background: transparent; color: #ef4444;">← Cambiar de paciente</button>
       </div>
     </div>
 
     <div id="form-screen" class="screen">
-      <div class="dashboard-container">
-        <h2>Formulario Clínico</h2>
+      <div class="dashboard-container" style="max-height: 90vh; overflow-y: auto;">
+        <h2>Formulario Quick-DASH</h2>
         <p class="mt-2 text-gray">Datos para: <span id="form-patient-name" style="color:#38bdf8;">--</span></p>
         
-        <div class="form-placeholder mt-4">
-            <p style="text-align: center; color: #64748b; padding: 2rem; border: 2px dashed #334155; border-radius: 8px;">
-                Aquí irá el formulario (Espacio de trabajo listo)
-            </p>
+        <div class="wizard-container mt-4" id="qd-wizard">
+            <div id="qd-question-text" class="qd-question-title">Cargando pregunta...</div>
+            <div id="qd-options-container" class="qd-options">
+            </div>
+
+            <div class="wizard-nav mt-4">
+                <button id="qd-prev-btn" class="btn secondary small">⬅ Anterior</button>
+                <span id="qd-progress" class="status" style="font-size: 1.1rem;">1 / 11</span>
+                <button id="qd-next-btn" class="btn primary small">Siguiente ➡</button>
+            </div>
         </div>
 
-        <button id="back-to-menu-btn" class="btn secondary full-width mt-4">Volver al Menú</button>
+        <div id="qd-result" class="wizard-container mt-4 hidden text-center">
+            <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">Resultado Quick-DASH</h3>
+            <div class="angle-display max"><span id="qd-score-value" style="font-size: 3rem;">0%</span></div>
+            <p class="hint-text mt-2" style="color: #cbd5e1; font-size: 1rem; line-height: 1.5;">Nivel de discapacidad del brazo, hombro o mano.<br>(0% = Sin limitación, 100% = Limitación total)</p>
+            <button id="qd-restart-btn" class="btn secondary small mt-4">Rehacer Cuestionario</button>
+        </div>
+
+        <button id="back-to-menu-btn" class="btn secondary full-width mt-4" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">Volver al Menú Principal</button>
       </div>
     </div>
 
@@ -80,7 +93,10 @@
     </div>
 
     <div id="physio-screen" class="screen">
-      <div class="physio-header">
+      
+      <div id="physio-instruction" class="floating-instruction">Sitúate en el centro. Evaluando ambos brazos.</div>
+
+      <div class="physio-header mt-2">
         <div>
           <h2>Evaluación: <span id="current-patient-name" style="color:#38bdf8;">--</span></h2>
           <p id="current-mode-label" class="mode-badge">Modo: Frontal (Bilateral)</p>
@@ -89,25 +105,10 @@
       </div>
       
       <div class="physio-panel">
-        <p id="physio-instruction" class="hint-text">Sitúate en el centro. Evaluando ambos brazos.</p>
-        
-        <p id="rep-counter" class="status mt-2" style="font-size: 1.2rem; color: #10b981; margin-top: 0.5rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.5rem;">Repeticiones: 0 / 3</p>
-        
-        <div class="dual-data-container">
-            <div class="arm-data">
-                <h3>Brazo Izquierdo</h3>
-                <div class="angle-display">Actual: <span id="current-angle-l">0°</span></div>
-                <div class="angle-display max">Máx: <span id="max-angle-l">0°</span></div>
-            </div>
-            <div class="arm-data">
-                <h3>Brazo Derecho</h3>
-                <div class="angle-display">Actual: <span id="current-angle-r">0°</span></div>
-                <div class="angle-display max">Máx: <span id="max-angle-r">0°</span></div>
-            </div>
-        </div>
+        <p id="rep-counter" class="status" style="font-size: 1.3rem; color: #10b981; margin-top: 0; margin-bottom: 1rem; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem;">Repeticiones - Izq: 0/2 | Der: 0/2</p>
 
         <div class="action-buttons">
-          <button id="save-data-btn" class="btn primary full-width mt-4">Guardar Manualmente</button>
+          <button id="save-data-btn" class="btn primary full-width mt-2">Guardar Manualmente</button>
           <button id="finish-btn" class="btn secondary full-width mt-2">Volver al Menú Principal</button>
         </div>
       </div>
